@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GraphQL Tester</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body { background: #1e1e1e; color: #ddd; font-family: 'Courier New', monospace; }
+    .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+    .split { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; height: calc(100vh - 100px); }
+    textarea { background: #2d2d2d; color: #0f0; border: 1px solid #444; font-size: 12px; font-family: monospace; padding: 10px; height: 100%; resize: none; }
+    pre { background: #2d2d2d; color: #0f0; border: 1px solid #444; padding: 10px; height: 100%; overflow: auto; margin: 0; }
+    .btn { margin-bottom: 10px; }
+    .navbar { background: linear-gradient(90deg, #667eea 0%, #764ba2 100%); }
+    .nav-link { color: white !important; }
+  </style>
+</head>
+<body>
+  <nav class="navbar navbar-dark">
+    <div class="container-fluid">
+      <span class="navbar-brand mb-0 h1">GraphQL Tester</span>
+      <span class="text-white-50">Kiểm tra GraphQL API</span>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="mb-3">
+      <button id="sendBtn" class="btn btn-success btn-sm">Gửi Query</button>
+      <button id="formatBtn" class="btn btn-info btn-sm">Format</button>
+      <button id="clearBtn" class="btn btn-secondary btn-sm">Xóa</button>
+      <small class="text-muted ms-2">Endpoint: /graphql</small>
+    </div>
+
+    <div class="split">
+      <div>
+        <h6 class="mb-2">Query / Mutation</h6>
+        <textarea id="queryInput" placeholder="Nhập GraphQL query hoặc mutation...">query {
+  users {
+    id
+    fullname
+    email
+    phone
+  }
+}</textarea>
+      </div>
+      <div>
+        <h6 class="mb-2">Kết quả</h6>
+        <pre id="resultOutput">Chạy query để xem kết quả...</pre>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const queryInput = document.getElementById('queryInput');
+    const resultOutput = document.getElementById('resultOutput');
+    const sendBtn = document.getElementById('sendBtn');
+    const formatBtn = document.getElementById('formatBtn');
+    const clearBtn = document.getElementById('clearBtn');
+
+    sendBtn.addEventListener('click', async () => {
+      const query = queryInput.value.trim();
+      if (!query) {
+        resultOutput.textContent = 'Vui lòng nhập query';
+        return;
+      }
+
+      resultOutput.textContent = 'Đang gửi...';
+      try {
+        const response = await fetch('/graphql', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query })
+        });
+        const data = await response.json();
+        resultOutput.textContent = JSON.stringify(data, null, 2);
+      } catch (e) {
+        resultOutput.textContent = `Lỗi: ${e.message}`;
+      }
+    });
+
+    formatBtn.addEventListener('click', () => {
+      try {
+        const query = queryInput.value;
+        // Simple formatting: add newlines after { and }
+        const formatted = query
+          .replace(/{/g, '{\n  ')
+          .replace(/}/g, '\n}')
+          .replace(/\n\s*\n/g, '\n');
+        queryInput.value = formatted;
+      } catch (e) {
+        alert('Lỗi format: ' + e.message);
+      }
+    });
+
+    clearBtn.addEventListener('click', () => {
+      queryInput.value = '';
+      resultOutput.textContent = '';
+    });
+
+    // Enter key support (Ctrl+Enter to send)
+    queryInput.addEventListener('keydown', (e) => {
+      if (e.ctrlKey && e.key === 'Enter') {
+        sendBtn.click();
+      }
+    });
+  </script>
+</body>
+</html>

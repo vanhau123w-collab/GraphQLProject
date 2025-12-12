@@ -16,4 +16,7 @@ public class WebController {
 
     @GetMapping("/categories")
     public String categories() { return "categories"; }
-}
+
+    @GetMapping("/graphql-tester")
+    public String graphqlTester() { return "graphql"; }
+ }
