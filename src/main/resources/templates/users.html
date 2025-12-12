@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Người dùng - Quản lý</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    body{font-family:'Segoe UI',Roboto,Arial;background:#f5f7fa;padding:20px}
+    .navbar-custom{background:linear-gradient(90deg,#51cf66 0%,#37b24d 100%);padding:16px 20px;margin:-20px -20px 24px -20px;box-shadow:0 4px 12px rgba(0,0,0,0.1)}
+    .navbar-custom a{color:#fff;text-decoration:none;font-weight:600;display:inline-flex;align-items:center;gap:6px}
+    .navbar-custom a:hover{opacity:0.8}
+    .page-title{color:#333;font-weight:700;font-size:1.8rem;margin:0}
+    .main-container{max-width:1200px;margin:0 auto}
+    .section-card{background:#fff;border-radius:12px;padding:24px;margin-bottom:24px;box-shadow:0 2px 8px rgba(0,0,0,0.08);border-left:4px solid #51cf66}
+    .section-title{font-size:1.2rem;font-weight:600;color:#333;margin-bottom:16px}
+    table th{background:#f8f9fa;font-weight:600;color:#333;border-bottom:2px solid #dee2e6}
+    table td{vertical-align:middle;color:#555}
+    table tbody tr:hover{background:#f8f9fa}
+    .form-section{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;align-items:end}
+    .status-text{font-size:0.9rem;color:#666}
+    .empty-state{text-align:center;padding:40px;color:#999}
+    .empty-state i{font-size:3rem;margin-bottom:12px;opacity:0.5}
+  </style>
+</head>
+<body>
+<div class="navbar-custom">
+    <a href="/"><i class="bi bi-house-fill"></i>Trang chủ</a>
+</div>
+
+<div class="main-container">
+    <h1 class="page-title"><i class="bi bi-people-fill"></i> Quản lý Người dùng</h1>
+
+    <div class="section-card">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="section-title">Danh sách người dùng</h5>
+            <div>
+                <button id="refreshUsers" class="btn btn-sm btn-primary"><i class="bi bi-arrow-clockwise"></i> Tải lại</button>
+                <span id="userStatus" class="status-text ms-3">&nbsp;</span>
+            </div>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-hover align-middle">
+            <thead><tr><th style="width:60px">ID</th><th>Họ & tên</th><th>Email</th><th style="width:120px">Điện thoại</th><th style="width:140px">Hành động</th></tr></thead>
+            <tbody id="usersTable"></tbody>
+          </table>
+        </div>
+        <div id="emptyUsers" class="empty-state" style="display:none"><i class="bi bi-inbox"></i><br/>Chưa có người dùng</div>
+    </div>
+
+    <div class="section-card">
+        <h5 class="section-title"><i class="bi bi-person-plus"></i> Thêm / Chỉnh sửa Người dùng</h5>
+        <form id="userForm" class="form-section">
+            <input type="hidden" name="id">
+            <div>
+                <label class="form-label">Họ và tên</label>
+                <input class="form-control form-control-sm" name="fullname" placeholder="VD: Nguyễn Văn A" required>
+            </div>
+            <div>
+                <label class="form-label">Email</label>
+                <input class="form-control form-control-sm" name="email" type="email" placeholder="VD: user@example.com" required>
+            </div>
+            <div>
+                <label class="form-label">Mật khẩu</label>
+                <input class="form-control form-control-sm" name="password" placeholder="VD: password123" required>
+            </div>
+            <div>
+                <label class="form-label">Điện thoại</label>
+                <input class="form-control form-control-sm" name="phone" placeholder="VD: 0987654321">
+            </div>
+            <div class="d-flex gap-2">
+                <button class="btn btn-success btn-sm" type="submit"><i class="bi bi-check"></i> Lưu</button>
+                <button id="userReset" class="btn btn-secondary btn-sm" type="button"><i class="bi bi-x"></i> Hủy</button>
+                <span id="userMsg" class="status-text" style="color:#51cf66"></span>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+const graphql = async (q, vars)=>{
+  const r = await fetch('/graphql',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query:q,variables:vars})});
+  return r.json();
+}
+
+function $(s){return document.querySelector(s)}
+function escapeHtml(s){ return String(s||'').replace(/[&<>\"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','\\"':'&quot;',"'":'&#39;'}[ch])); }
+
+async function loadUsers(){
+  $('#userStatus').textContent = 'Đang tải...';
+  const q = `query{ users{ id fullname email phone } }`;
+  const r = await graphql(q);
+  if (r.errors){ $('#userStatus').textContent = 'Lỗi: '+r.errors[0].message; return }
+  const rows = r.data.users || [];
+  const tb = document.querySelector('#usersTable'); tb.innerHTML='';
+  if(!rows.length){ document.querySelector('#emptyUsers').style.display='block'; return; }
+  document.querySelector('#emptyUsers').style.display='none';
+  rows.forEach(u=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td class="fw-bold">${u.id}</td><td>${escapeHtml(u.fullname)}</td><td>${escapeHtml(u.email)}</td><td>${escapeHtml(u.phone||'-')}</td><td><button class="btn btn-sm btn-outline-primary edit" data-id="${u.id}"><i class="bi bi-pencil"></i> Sửa</button> <button class="btn btn-sm btn-outline-danger del" data-id="${u.id}"><i class="bi bi-trash"></i> Xóa</button></td>`;
+    tb.appendChild(tr);
+  });
+  document.querySelectorAll('.edit').forEach(b=>b.addEventListener('click', onEdit));
+  document.querySelectorAll('.del').forEach(b=>b.addEventListener('click', onDelete));
+  $('#userStatus').textContent = 'Đã tải';
+}
+
+async function onEdit(ev){
+  const id = ev.target.closest('button').dataset.id;
+  const q = `query($id:ID!){ user(id:$id){ id fullname email phone } }`;
+  const r = await graphql(q,{id: parseInt(id)});
+  const u = r.data.user;
+  const f = $('#userForm'); f.id.value = u.id; f.fullname.value = u.fullname; f.email.value = u.email; f.phone.value = u.phone||''; f.password.value = '';
+}
+
+async function onDelete(ev){
+  if (!confirm('Xác nhận xóa người dùng này?')) return;
+  const id = parseInt(ev.target.closest('button').dataset.id);
+  const m = `mutation($id:ID!){ deleteUser(id:$id) }`;
+  const r = await graphql(m,{id});
+  if (r.errors) { $('#userMsg').textContent = 'Lỗi: '+r.errors[0].message; } else { $('#userMsg').textContent = '✓ Đã xóa'; await loadUsers(); }
+}
+
+$('#userForm').addEventListener('submit', async ev=>{
+  ev.preventDefault();
+  const f = ev.target; const id = f.id.value? parseInt(f.id.value):null;
+  const fullname = f.fullname.value; const email = f.email.value; const phone = f.phone.value||null;
+  if (id){
+    const m = `mutation($id:ID!,$fullname:String,$email:String,$phone:String){ updateUser(id:$id,fullname:$fullname,email:$email,phone:$phone){ id fullname } }`;
+    const r = await graphql(m,{id,fullname,email,phone});
+    if (r.errors) { $('#userMsg').textContent='Lỗi: '+r.errors[0].message } else { $('#userMsg').textContent='✓ Đã cập nhật'; f.reset(); await loadUsers(); }
+  } else {
+    const password = f.password.value;
+    const m = `mutation($fullname:String!,$email:String!,$password:String!,$phone:String){ createUser(fullname:$fullname,email:$email,password:$password,phone:$phone){ id fullname } }`;
+    const r = await graphql(m,{fullname,email,password,phone});
+    if (r.errors) { $('#userMsg').textContent='Lỗi: '+r.errors[0].message } else { $('#userMsg').textContent='✓ Đã tạo'; f.reset(); await loadUsers(); }
+  }
+});
+
+$('#userReset').addEventListener('click', ()=>{ $('#userForm').reset(); $('#userMsg').textContent=''; });
+$('#refreshUsers').addEventListener('click', ()=> loadUsers());
+
+window.addEventListener('load', ()=> loadUsers());
+</script>
+</body>
+</html>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Quản lý người dùng</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+<div class="container py-4">
+  <h3>Quản lý Người dùng</h3>
+  <div class="card mb-3"><div class="card-body">
+    <div class="d-flex gap-2 mb-2">
+      <button id="refreshUsers" class="btn btn-sm btn-primary">Tải lại</button>
+      <span id="userStatus" class="text-muted ms-2">&nbsp;</span>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-sm table-hover" id="usersTable">
+        <thead class="table-light"><tr><th>ID</th><th>Họ & tên</th><th>Email</th><th>Điện thoại</th><th>Hành động</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div></div>
+
+  <div class="card"><div class="card-body">
+    <h5>Tạo / Sửa Người dùng</h5>
+    <form id="userForm" class="row g-2">
+      <input type="hidden" name="id">
+      <div class="col-md-3"><input class="form-control form-control-sm" name="fullname" placeholder="Họ và tên" required></div>
+      <div class="col-md-3"><input class="form-control form-control-sm" name="email" placeholder="Email" required></div>
+      <div class="col-md-2"><input class="form-control form-control-sm" name="password" placeholder="Mật khẩu" required></div>
+      <div class="col-md-2"><input class="form-control form-control-sm" name="phone" placeholder="Điện thoại"></div>
+      <div class="col-md-2 d-flex"><button class="btn btn-success btn-sm me-2" type="submit">Lưu</button><button id="userReset" class="btn btn-secondary btn-sm" type="button">Hủy</button></div>
+    </form>
+    <div id="userMsg" class="mt-2"></div>
+  </div></div>
+</div>
+
+<script>
+const graphql = async (q, vars)=>{
+  const r = await fetch('/graphql',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query:q,variables:vars})});
+  return r.json();
+}
+
+async function loadUsers(){
+  $('#userStatus').textContent = 'Đang tải...';
+  const q = `query{ users{ id fullname email phone } }`;
+  const r = await graphql(q);
+  if (r.errors){ $('#userStatus').textContent = 'Lỗi: '+r.errors[0].message; return }
+  const rows = r.data.users || [];
+  const tb = document.querySelector('#usersTable tbody'); tb.innerHTML='';
+  rows.forEach(u=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${u.id}</td><td>${escapeHtml(u.fullname)}</td><td>${escapeHtml(u.email)}</td><td>${escapeHtml(u.phone||'')}</td><td><button class="btn btn-sm btn-outline-primary edit" data-id="${u.id}">Sửa</button> <button class="btn btn-sm btn-outline-danger del" data-id="${u.id}">Xóa</button></td>`;
+    tb.appendChild(tr);
+  });
+  document.querySelectorAll('.edit').forEach(b=>b.addEventListener('click', onEdit));
+  document.querySelectorAll('.del').forEach(b=>b.addEventListener('click', onDelete));
+  $('#userStatus').textContent = 'Đã tải';
+}
+
+function $(s){return document.querySelector(s)}
+function escapeHtml(s){ return String(s||'').replace(/[&<>\"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','\\"':'&quot;',"'":'&#39;'}[ch])); }
+
+async function onEdit(ev){
+  const id = ev.target.dataset.id;
+  const q = `query($id:ID!){ user(id:$id){ id fullname email phone } }`;
+  const r = await graphql(q,{id: parseInt(id)});
+  const u = r.data.user;
+  const f = $('#userForm'); f.id.value = u.id; f.fullname.value = u.fullname; f.email.value = u.email; f.phone.value = u.phone||'';
+}
+
+async function onDelete(ev){
+  if (!confirm('Xác nhận xóa người dùng?')) return;
+  const id = parseInt(ev.target.dataset.id);
+  const m = `mutation($id:ID!){ deleteUser(id:$id) }`;
+  const r = await graphql(m,{id});
+  if (r.errors) { $('#userMsg').textContent = 'Lỗi: '+r.errors[0].message; } else { $('#userMsg').textContent = 'Đã xóa'; await loadUsers(); }
+}
+
+$('#userForm').addEventListener('submit', async ev=>{
+  ev.preventDefault();
+  const f = ev.target; const id = f.id.value? parseInt(f.id.value):null;
+  const fullname = f.fullname.value; const email = f.email.value; const phone = f.phone.value||null;
+  if (id){
+    const m = `mutation($id:ID!,$fullname:String,$email:String,$phone:String){ updateUser(id:$id,fullname:$fullname,email:$email,phone:$phone){ id fullname } }`;
+    const r = await graphql(m,{id,fullname,email,phone});
+    if (r.errors) { $('#userMsg').textContent='Lỗi: '+r.errors[0].message } else { $('#userMsg').textContent='Đã cập nhật'; f.reset(); await loadUsers(); }
+  } else {
+    const m = `mutation($fullname:String!,$email:String!,$password:String!,$phone:String){ createUser(fullname:$fullname,email:$email,password:$password,phone:$phone){ id fullname } }`;
+    const password = f.password.value;
+    const r = await graphql(m,{fullname,email,password,phone});
+    if (r.errors) { $('#userMsg').textContent='Lỗi: '+r.errors[0].message } else { $('#userMsg').textContent='Đã tạo'; f.reset(); await loadUsers(); }
+  }
+});
+
+$('#userReset').addEventListener('click', ()=>{ $('#userForm').reset(); $('#userMsg').textContent=''; });
+$('#refreshUsers').addEventListener('click', ()=> loadUsers());
+
+window.addEventListener('load', ()=> loadUsers());
+</script>
+</body>
+</html>

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bảng điều khiển - Quản trị hệ thống</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    body{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);font-family:'Segoe UI',Roboto,Arial;min-height:100vh;margin:0;display:flex;align-items:center}
+    .hero-section{max-width:1200px;margin:0 auto;padding:40px 20px;width:100%}
+    .hero-title{color:#fff;font-weight:700;font-size:2.5rem;text-align:center;margin-bottom:16px}
+    .hero-subtitle{color:rgba(255,255,255,0.9);text-align:center;font-size:1.1rem;margin-bottom:48px}
+    .card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:28px}
+    .nav-card{background:#fff;border-radius:12px;padding:32px;box-shadow:0 8px 24px rgba(0,0,0,0.12);transition:transform 0.3s,box-shadow 0.3s;text-decoration:none;color:inherit;display:flex;flex-direction:column;align-items:center;text-align:center}
+    .nav-card:hover{transform:translateY(-8px);box-shadow:0 12px 32px rgba(0,0,0,0.2)}
+    .nav-card-icon{font-size:3.5rem;margin-bottom:16px}
+    .nav-card-title{font-size:1.3rem;font-weight:600;margin-bottom:8px}
+    .nav-card-desc{font-size:0.9rem;color:#666}
+    .icon-products{color:#ff6b6b}
+    .icon-users{color:#51cf66}
+    .icon-categories{color:#4dabf7}
+  </style>
+</head>
+<body>
+  <div class="hero-section">
+    <h1 class="hero-title">📊 Bảng Điều Khiển</h1>
+    <p class="hero-subtitle">Quản lý sản phẩm, người dùng và danh mục một cách dễ dàng</p>
+    
+    <div class="card-grid">
+      <a href="/products" class="nav-card">
+        <div class="nav-card-icon icon-products"><i class="bi bi-bag-fill"></i></div>
+        <h5 class="nav-card-title">Sản phẩm</h5>
+        <p class="nav-card-desc">Quản lý danh sách sản phẩm, giá và số lượng</p>
+      </a>
+
+      <a href="/users" class="nav-card">
+        <div class="nav-card-icon icon-users"><i class="bi bi-people-fill"></i></div>
+        <h5 class="nav-card-title">Người dùng</h5>
+        <p class="nav-card-desc">Tạo, sửa, xóa tài khoản người dùng</p>
+      </a>
+
+      <a href="/categories" class="nav-card">
+        <div class="nav-card-icon icon-categories"><i class="bi bi-list-ul"></i></div>
+        <h5 class="nav-card-title">Danh mục</h5>
+        <p class="nav-card-desc">Tổ chức danh mục sản phẩm</p>
+      </a>
+    </div>
+
+    <div style="text-align:center;margin-top:48px;color:rgba(255,255,255,0.8);font-size:0.9rem">
+      GraphQL + Spring Boot 3 • Thymeleaf AJAX • Demo đầy đủ chức năng CRUD
+    </div>
+  </div>
+</body>
+</html>
